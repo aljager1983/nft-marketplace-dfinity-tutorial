@@ -7,6 +7,7 @@ import Item from "./Item";
 import Minter from "./Minter";
 
 function App() {
+
   const NFTID = "rrkah-fqaaa-aaaaa-aaaaq-cai";
 
   return (
