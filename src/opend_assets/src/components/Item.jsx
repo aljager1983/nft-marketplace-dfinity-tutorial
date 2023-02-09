@@ -13,7 +13,8 @@ function Item(props) {
   const [button, setButton] = useState();
   const [priceInput, setPriceInput] = useState();
   const [loaderHidden, setLoaderHidden] = useState(true);
-  const [blur, setBlur] = useState()
+  const [blur, setBlur] = useState();
+  const [sellStatus, setSellStatus] = useState("");
 
   const id = props.id;
 
@@ -40,8 +41,17 @@ function Item(props) {
     setName(name);
     setOwner(owner.toText());
     setImage(image);
+    //calling the nftlisting checker function in main.mo
+    const nftIsListed = await opend.isListed(props.id);
+      if(nftIsListed) {
+        setOwner("OpenD");
+        setBlur({filter: "blur(4px)"});
+        setSellStatus("Listed");
+      } else {
+        setButton(<Button handleClick={handleSell} text={"Sell"} />);
+      }
 
-    setButton(<Button handleClick={handleSell} text={"Sell"} />);
+    
   }
 
   useEffect(() => {
@@ -78,6 +88,7 @@ function Item(props) {
             setButton();
             setPriceInput();
             setOwner("OpenD"); 
+            setSellStatus("Listed")
           }
         }
       }
@@ -99,7 +110,7 @@ function Item(props) {
         <div className="disCardContent-root">
           <h2 className="disTypography-root makeStyles-bodyText-24 disTypography-h5 disTypography-gutterBottom">
             {name}
-            <span className="purple-text"></span>
+            <span className="purple-text"> {sellStatus}</span>
           </h2>
           <p className="disTypography-root makeStyles-bodyText-24 disTypography-body2 disTypography-colorTextSecondary">
             Owner: {owner}
