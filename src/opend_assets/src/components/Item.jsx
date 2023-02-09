@@ -41,17 +41,21 @@ function Item(props) {
     setName(name);
     setOwner(owner.toText());
     setImage(image);
-    //calling the nftlisting checker function in main.mo
-    const nftIsListed = await opend.isListed(props.id);
-      if(nftIsListed) {
-        setOwner("OpenD");
-        setBlur({filter: "blur(4px)"});
-        setSellStatus("Listed");
-      } else {
-        setButton(<Button handleClick={handleSell} text={"Sell"} />);
-      }
 
-    
+    //calling the role props from gallery that was called from headers
+    if(props.role == "collection") {
+      //calling the nftlisting checker function in main.mo
+      const nftIsListed = await opend.isListed(props.id);
+        if(nftIsListed) {
+          setOwner("OpenD");
+          setBlur({filter: "blur(4px)"});
+          setSellStatus("Listed");
+        } else {
+          setButton(<Button handleClick={handleSell} text={"Sell"} />);
+        }
+      } else if(props.role == "discover") {
+        setButton(<Button handleClick={handleBuy} text={"Buy"} />);
+      }
   }
 
   useEffect(() => {
@@ -91,6 +95,11 @@ function Item(props) {
             setSellStatus("Listed")
           }
         }
+      }
+
+      //buying function
+      async function handleBuy () {
+        console.log("Buy was triggered")
       }
 
   return (
