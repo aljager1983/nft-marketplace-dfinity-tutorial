@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import logo from "../../assets/logo.png";
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { idlFactory } from "../../../declarations/nft";
+import { idlFactory as tokenIdlFactory} from "../../../declarations/token";
 import { Principal } from "@dfinity/principal";
 import Button from "./Button";
 import {opend} from "../../../declarations/opend";
@@ -18,7 +19,7 @@ function Item(props) {
   const [blur, setBlur] = useState();
   const [sellStatus, setSellStatus] = useState("");
   const [priceLabel, setPriceLabel] = useState();
-
+  const [shouldDisplay, setDisplay] = useState(true);
 
   const id = props.id;
 
@@ -58,19 +59,15 @@ function Item(props) {
           setButton(<Button handleClick={handleSell} text={"Sell"} />);
         }
       } else if(props.role == "discover") {
-        
-        //function from main.mo
         const originalOwner = await opend.getOriginalOwner(props.id);
-        //checking current user is logged in
         if(originalOwner.toText() != CURRENT_USER_ID.toText()) {
-          setButton(<Button handleClick={handleBuy} text={"Buy"} />);
-        }
-
-    
-        const price = await opend.getListedNFTPrice(props.id);
-        setPriceLabel(<PriceLabel sellPrice={price.toString()} />);
-
+        setButton(<Button handleClick={handleBuy} text={"Buy"} />);
       }
+
+      //price label
+      const price = await opend.getListedNFTPrice(props.id);
+      setPriceLabel(<PriceLabel sellPrice={price.toString()} />)
+    }
   }
 
   useEffect(() => {
@@ -115,10 +112,30 @@ function Item(props) {
       //buying function
       async function handleBuy () {
         console.log("Buy was triggered")
+        setLoaderHidden(false);
+        const tokenActor = await Actor.createActor(tokenIdlFactory, {
+          agent,
+          //token canisterid
+          canisterId: Principal.fromText("wckdt-raaaa-aaaaa-aaatq-cai"),
+        });
+
+        //transferring the money from buyer to seller
+        //first: hold of the sellers principal id
+        const sellerId = await opend.getOriginalOwner(props.id);
+        //second: know the item price
+        const itemPrice = await opend.getListedNFTPrice(props.id);
+        //finally: the actual transfer of money
+        const result = await tokenActor.transfer(sellerId, itemPrice);
+        if(result == "Success") {
+          const transferResult = await opend.completePurchase(props.id, sellerId, CURRENT_USER_ID);
+          console.log("purchase: " + transferResult)
+          setLoaderHidden(true);
+          setDisplay(false)
+        }
       }
 
   return (
-    <div className="disGrid-item">
+    <div style={{display: shouldDisplay ? "inline" : "none"}} className="disGrid-item">
       <div className="disPaper-root disCard-root makeStyles-root-17 disPaper-elevation1 disPaper-rounded">
         <img
           className="disCardMedia-root makeStyles-image-19 disCardMedia-media disCardMedia-img"
@@ -134,7 +151,7 @@ function Item(props) {
         <div className="disCardContent-root">
           {priceLabel}
           <h2 className="disTypography-root makeStyles-bodyText-24 disTypography-h5 disTypography-gutterBottom">
-            {name}  
+            {name}
             <span className="purple-text"> {sellStatus}</span>
           </h2>
           <p className="disTypography-root makeStyles-bodyText-24 disTypography-body2 disTypography-colorTextSecondary">
